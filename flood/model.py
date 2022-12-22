@@ -420,3 +420,12 @@ class FloodEvacuation(Model):
                 count += 1
 
         return count
+    
+    def run_model(self, num_steps):   
+        for i in range(num_steps): 
+            self.schedule.step()
+            self.datacollector.collect(self)
+            if self.count_human_status(self, Human.Status.ALIVE) ==0:
+                dead_persons=self.count_human_status(self,Human.Status.DEAD)
+                print(dead_persons,"yes")
+                break
