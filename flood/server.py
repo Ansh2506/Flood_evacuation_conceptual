@@ -141,7 +141,7 @@ model_params = {
         "slider", "Percentage Aware of Route", value=20, min_value=0, max_value=100, step=10
     ),
      "mobility_good_percentage": UserSettableParameter(
-        "slider", "Percentage with good mobility", value=20, min_value=0, max_value=100, step=10
+        "slider", "Percentage with good mobility", value=80, min_value=0, max_value=100, step=10
     )
     }
 

@@ -12,7 +12,7 @@ from mesa.datacollection import DataCollector
 from mesa.space import Coordinate, MultiGrid
 from mesa.time import RandomActivation
 
-from agent import Human, Wall ,EmergencyExit, House, Water, Tree, Bridge,Tile, Highway, Path, AgricultureField,Forecaster
+from agent import Human, DeadHuman, Wall ,EmergencyExit, House, Water, Tree, Bridge,Tile, Highway, Path, AgricultureField,Forecaster
 
 
 class FloodEvacuation(Model):
@@ -212,7 +212,7 @@ class FloodEvacuation(Model):
                 health = np.random.randint(self.MIN_HEALTH,self.MAX_HEALTH)
                 #speed = np.random.randint(self.MIN_SPEED, self.MAX_SPEED)
                 #speed = self.MIN_SPEED
-                speed = 1
+                speed = 2
 
                 if number_collaborators > 0:
                     collaborates = True
@@ -269,16 +269,13 @@ class FloodEvacuation(Model):
 
                 experience = np.random.randint(self.MIN_EXPERIENCE, self.MAX_EXPERIENCE)
 
-                belief_distribution = [0.9, 0.1]  # [Believes, Doesn't Believe]
+                belief_distribution = [0.2, 0.8]  # [Believes, Doesn't Believe]
                 believes_alarm = np.random.choice([True, False], p=belief_distribution) #p is the probability of each element in array
                 #believes_alarm = 0.2 * self.human_count
                 print("Does the agent believe the alarm :", believes_alarm)
 
                 self_warned = False 
-                age = np.random.randint(20, 70) 
-
-                xyz_distribution = [0.6,0.4]
-                xyz = np.random.choice([True, False], p=xyz_distribution)  
+                age = np.random.randint(20, 70)  
 
                 human = Human(
                     pos,
@@ -295,6 +292,7 @@ class FloodEvacuation(Model):
                     age = age,
                     model=self,
                 )
+                #print(human.rand_id)
                 print(human.vision)
                 self.grid.place_agent(human, pos)
                 self.schedule.add(human)
@@ -406,7 +404,7 @@ class FloodEvacuation(Model):
         """
         count = 0
         for agent in model.schedule.agents:
-            if isinstance(agent, Human) and agent.get_status() == status:
+            if (isinstance(agent, Human) or isinstance(agent,DeadHuman)) and agent.get_status() == status:
                 count += 1
 
         return count
