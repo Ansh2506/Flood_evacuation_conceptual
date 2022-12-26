@@ -599,15 +599,6 @@ class Human(Agent):
 
         return self.planned_target[1]
 
-    
-    def get_state_score(self):
-        health_component = 1.50 / np.exp(self.health / (self.nervousness))
-        experience_component = 1 / np.exp(self.experience / self.nervousness)
-
-        state_score = health_component + experience_component
-
-        return state_score
-
     def die(self):
         # Store the agent's position of death so we can remove them and place a DeadHuman
         pos = self.pos
@@ -623,7 +614,6 @@ class Human(Agent):
         #print(neighborhood)
         contents = self.model.grid.get_cell_list_contents(self.pos)
         #print('contents', contents)
-        
         for content in contents:
             if isinstance(content,Water):
                 print('surrounding has water')
@@ -632,8 +622,7 @@ class Human(Agent):
     def check_surrounding(self):
         if self.morale_boost:
             return
-
-        
+    
         for _,agents in self.visible_tiles:
             
             for agent in agents:
@@ -712,23 +701,8 @@ class Human(Agent):
                 
         # if self.test_collaboration():
         for location, visible_agents in self.visible_tiles:
-            if self.planned_action:
-                break
-
+            
             for agent in visible_agents:
-                if self.planned_action:
-                    break
-                # if isinstance(agent, Human) and not self.planned_action:
-                #     if agent.get_mobility() == Human.Mobility.PANIC:
-                        
-                #         self.planned_target = (
-                #             agent,
-                #             location,
-                #         )
-                #         # Plan to DO MORALE SUPPORT the agent
-                #         self.planned_action = Human.Action.MORALE_SUPPORT
-                #         print(f"Agent {self.unique_id} planned VERBAL collaboration at", location)
-                #         break
                     
                 if isinstance(agent, EmergencyExit):
                     # Verbal collaboration
@@ -962,7 +936,6 @@ class Human(Agent):
                 if self.self_warned == True :
                     #print(f"Agent {self.unique_id} now believes the flood is real!")
                     #self.check_for_collaboration()
-                    self.get_state_score()
                     self.check_awareness()
 
                     #if self.mobility == Human.Mobility.NORMAL and self.awareness == Human.Awareness.AWARE:
