@@ -413,7 +413,7 @@ class Human(Agent):
                             checked_tiles.add(
                                 tile
                             )  # Add the tile to checked tiles so we don't check it again
-                            visible_neighborhood.add((tile, tuple(visible_contents)))
+                            visible_neighborhood.add((tuple(visible_contents),tile))
 
                 except Exception as e:
                     print(e)
