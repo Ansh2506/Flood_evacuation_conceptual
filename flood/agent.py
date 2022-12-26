@@ -270,7 +270,6 @@ class Human(Agent):
     """
     class Mobility(IntEnum):
         NORMAL = 1
-        ERRATIC = 2
 
     class Status(IntEnum):
         DEAD = 0
@@ -646,20 +645,6 @@ class Human(Agent):
                     self.self_warned = False
                     #print(f"Agent {self.unique_id} inactive and unaware of the flood")
 
-       
-    def check_state(self):
-        state_score = self.get_state_score()
-
-        if state_score >= self.STATE_THRESHOLD :
-            print(f"Agent {self.unique_id} has normal mobility")
-            self.mobility = Human.Mobility.NORMAL
-            #self.awareness = Human.Awareness.AWARE
-            
-        elif state_score < self.STATE_THRESHOLD:
-            print("Agent does not have normal mobility:")
-            self.mobility = Human.Mobility.ERRATIC
-            #self.awareness = Human.Awareness.UNAWARE
-
     def check_awareness(self):
 
         if self.route_information:
@@ -835,10 +820,9 @@ class Human(Agent):
         planned_agent, _ = self.planned_target
 
         if planned_agent:
-            # Agent had planned morale collaboration, but the agent is no longer panicking or no longer alive, so drop it.
+            # Agent had planned verbal collaboration, but the agent is no longer alive, so drop it.
             if self.planned_action == Human.Action.VERBAL_SUPPORT and (
-                planned_agent.get_mobility() != Human.Mobility.ERRATIC
-                or not planned_agent.get_status() == Human.Status.ALIVE
+                not planned_agent.get_status() == Human.Status.ALIVE
             ):
                 # print("Target agent no longer panicking. Dropping action.")
                 self.planned_target = (None, None)
@@ -962,9 +946,6 @@ class Human(Agent):
                     self.attempt_exit_plan()
                     #print("get random target")
                     #self.get_random_target()
-           
-                # elif self.mobility == Human.Mobility.ERRATIC and self.awareness == Human.Awareness.UNAWARE:
-                #     self.get_random_target()
 
 
             #planned_pos = self.planned_target[1]
@@ -981,7 +962,6 @@ class Human(Agent):
                 if self.self_warned == True :
                     #print(f"Agent {self.unique_id} now believes the flood is real!")
                     #self.check_for_collaboration()
-                    self.check_state()
                     self.get_state_score()
                     self.check_awareness()
 

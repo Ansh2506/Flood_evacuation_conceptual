@@ -21,13 +21,7 @@ def flood_evacuation_portrayal(agent):
     if type(agent) is Human:
         portrayal["scale"] = 1
         portrayal["Layer"] = 5
-
-        if agent.get_mobility() == Human.Mobility.ERRATIC:
-            # Panicked
-            portrayal["Shape"] = "resources/panicked_human.png"
-        else:
-            # Normal
-            portrayal["Shape"] = "resources/human.png"
+        portrayal["Shape"] = "resources/human.png"
     elif type(agent) is Water:
         portrayal["Shape"] = "resources/water.png"
         portrayal["scale"] = 1
@@ -97,13 +91,6 @@ status_chart = ChartModule(
     ]
 )
 
-mobility_chart = ChartModule(
-    [
-        {"Label": "Normal", "Color": "green"},
-        {"Label": "Panic", "Color": "red"},
-    ]
-)
-
 collaboration_chart = ChartModule(
     [
         {"Label": "Verbal Collaboration", "Color": "orange"},
@@ -148,7 +135,7 @@ model_params = {
 # Start the visual server with the model
 server = ModularServer(
     FloodEvacuation,
-    [canvas_element, status_chart, mobility_chart, collaboration_chart],
+    [canvas_element, status_chart, collaboration_chart],
     "Flood Evacuation",
     model_params,
 )

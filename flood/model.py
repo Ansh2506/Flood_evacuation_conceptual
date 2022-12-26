@@ -178,9 +178,6 @@ class FloodEvacuation(Model):
                 "Alive": lambda m: self.count_human_status(m, Human.Status.ALIVE),
                 "Dead": lambda m: self.count_human_status(m, Human.Status.DEAD),
                 "Escaped": lambda m: self.count_human_status(m, Human.Status.ESCAPED),
-                
-                "Normal": lambda m: self.count_human_mobility(m, Human.Mobility.NORMAL),
-                "Erratic": lambda m: self.count_human_mobility(m, Human.Mobility.ERRATIC),
                 "Verbal Collaboration": lambda m: self.count_human_collaboration(
                     m, Human.Action.VERBAL_SUPPORT
                 ),
@@ -328,11 +325,11 @@ class FloodEvacuation(Model):
         status_plot.set_xlabel("Simulation Step")
         status_plot.set_ylabel("Count")
 
-        mobility_results = results.loc[:, ["Normal", "Erratic"]]
-        mobility_plot = mobility_results.plot(ax=axes[1])
-        mobility_plot.set_title("Human Mobility")
-        mobility_plot.set_xlabel("Simulation Step")
-        mobility_plot.set_ylabel("Count")
+        # mobility_results = results.loc[:, ["Normal", "Erratic"]]
+        # mobility_plot = mobility_results.plot(ax=axes[1])
+        # mobility_plot.set_title("Human Mobility")
+        # mobility_plot.set_xlabel("Simulation Step")
+        # mobility_plot.set_ylabel("Count")
 
         collaboration_results = results.loc[
             :, ["Verbal Collaboration"]
