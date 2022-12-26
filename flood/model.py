@@ -245,25 +245,6 @@ class FloodEvacuation(Model):
                     )
                 )
 
-                nervousness_distribution = [
-                    0.025,
-                    0.025,
-                    0.1,
-                    0.1,
-                    0.1,
-                    0.3,
-                    0.2,
-                    0.1,
-                    0.025,
-                    0.025,
-                ]  # Distribution with slight higher weighting for above median nerovusness
-                nervousness = int(
-                    np.random.choice(
-                        range(self.MIN_NERVOUSNESS, self.MAX_NERVOUSNESS + 1),
-                        p=nervousness_distribution,
-                    )
-                )  # Random choice starting at 1 and up to and including 10
-
                 experience = np.random.randint(self.MIN_EXPERIENCE, self.MAX_EXPERIENCE)
 
                 belief_distribution = [0.2, 0.8]  # [Believes, Doesn't Believe]
@@ -282,15 +263,12 @@ class FloodEvacuation(Model):
                     collaborates=collaborates,
                     route_information= route_information,
                     mobility_good= mobility_good,
-                    nervousness=nervousness,
                     experience=experience,
                     believes_alarm=believes_alarm,
                     self_warned = self_warned,
                     age = age,
                     model=self,
                 )
-                #print(human.rand_id)
-                print(human.vision)
                 self.grid.place_agent(human, pos)
                 self.schedule.add(human)
             else:

@@ -279,7 +279,6 @@ class Human(Agent):
     class Action(IntEnum):
         MORALE_SUPPORT = 1
         VERBAL_SUPPORT = 2
-        RETREAT = 3
 
     class Awareness(IntEnum):
         UNAWARE = 0
@@ -296,13 +295,6 @@ class Human(Agent):
 
     MIN_KNOWLEDGE = 0
     MAX_KNOWLEDGE = 1
-
-    
-
-    # The value the panic score must reach for an agent to start panic behaviour
-    #PANIC_THRESHOLD = 0.9             #modifying the panic threshold to 0.9
-    STATE_THRESHOLD = 0.2
-
     # When the health value drops below this value, the agent will being to slow down
     SLOWDOWN_THRESHOLD = 0.5
 
@@ -314,7 +306,6 @@ class Human(Agent):
         collaborates: bool,
         route_information : bool,
         vision,
-        nervousness,
         experience,
         believes_alarm: bool,
         self_warned: bool,
@@ -336,16 +327,12 @@ class Human(Agent):
         self.vision = vision
         self.collaborates = collaborates
         self.route_information = route_information
-        self.nervousness = nervousness
         self.awareness : Human.Awareness = Human.Awareness.UNAWARE
 
         self.verbal_collaboration_count: int = 0
      
-        
         self.morale_boost: bool = False
         
-        
-
         self.knowledge = self.MIN_KNOWLEDGE
         self.experience = experience
         self.believes_alarm = believes_alarm
