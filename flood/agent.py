@@ -706,6 +706,7 @@ class Human(Agent):
                     
                 if isinstance(agent, EmergencyExit):
                     # Verbal collaboration
+                    self.planned_action = Human.Action.VERBAL_SUPPORT
                     self.verbal_collaboration(agent, location)
 
 
