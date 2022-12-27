@@ -612,6 +612,7 @@ class Human(Agent):
     def die(self):
         # Store the agent's position of death so we can remove them and place a DeadHuman
         pos = self.pos
+        self.model.schedule.remove(self)
         self.model.grid.remove_agent(self)
         dead_self = DeadHuman(pos, self.model)
         self.model.grid.place_agent(dead_self, pos)
