@@ -400,6 +400,7 @@ class FloodEvacuation(Model):
         for i in range(num_steps): 
             self.schedule.step()
             self.datacollector.collect(self)
+            print("alive_persons ",self.count_human_status(self, Human.Status.ALIVE))
             if self.count_human_status(self, Human.Status.ALIVE) ==0:
                 dead_persons=self.count_human_status(self,Human.Status.DEAD)
                 print(dead_persons,"yes")
