@@ -9,7 +9,7 @@ from copy import deepcopy
 from utils import get_random_id
 import random
 
-
+call=0
 def get_line(start, end):
     """
     Implementation of Bresenham's Line Algorithm
@@ -124,9 +124,6 @@ class DeadHuman(FloorObject):
     def __init__(self,pos,model):
         super().__init__(pos,traversable=True,model=model)
 
-    def get_status(self):
-        return Human.Status.DEAD
-
 class Tile(FloorObject):
     def __init__(self,pos,elevation,model):
         super().__init__(pos,traversable=True,model=model)
@@ -162,37 +159,44 @@ class Water(FloorObject):
         self.speed = 1       #this can be changed to our wish,and affects the water radius  
 
     def step(self):
-        dont_spread = [Water,House,Wall,Bridge]
-        neighborhood = self.model.grid.get_neighborhood(self.pos,moore=True,include_center=False,radius=self.speed)
-        own_contents = self.model.grid.get_cell_list_contents(self.pos)
-        own_elevation = 0 
-        
-        
-        for agent in own_contents:
-            if isinstance(agent,Tile):
-                own_elevation = agent.elevation
-                
-        for cell in neighborhood:
-            cont = self.model.grid.get_cell_list_contents((cell[0],cell[1])) #x and y coordinates of the neighbouring cells, get contents of neighbouring cells
-            flag = False
-            for agent in cont:
-                for i in dont_spread:
-                    if isinstance(agent,i):
-                        flag = True
-                        break
+        global call
+        if call%7==0:
+            #print(call)
+            call+=1
+            dont_spread = [Water,House,Wall,Bridge]
+            neighborhood = self.model.grid.get_neighborhood(self.pos,moore=True,include_center=False,radius=self.speed)
+            own_contents = self.model.grid.get_cell_list_contents(self.pos)
+            own_elevation = 0 
+            
+            
+            for agent in own_contents:
+                if isinstance(agent,Tile):
+                    own_elevation = agent.elevation
                     
-            if flag == False:
-                neighbour_elevation = 0
+            for cell in neighborhood:
+                cont = self.model.grid.get_cell_list_contents((cell[0],cell[1])) #x and y coordinates of the neighbouring cells, get contents of neighbouring cells
+                flag = False
                 for agent in cont:
-                    if isinstance(agent,Tile):
-                        neighbour_elevation = agent.elevation
+                    for i in dont_spread:
+                        if isinstance(agent,i):
+                            flag = True
+                            break
                         
-                if neighbour_elevation <= own_elevation:  
-                        
-                    water = Water((cell[0],cell[1]),self.model)
-                    water.unique_id = get_random_id()
-                    self.model.schedule.add(water)
-                    self.model.grid.place_agent(water,(cell[0],cell[1]))
+                if flag == False:
+                    neighbour_elevation = 0
+                    for agent in cont:
+                        if isinstance(agent,Tile):
+                            neighbour_elevation = agent.elevation
+                            
+                    if neighbour_elevation <= own_elevation:  
+                            
+                        water = Water((cell[0],cell[1]),self.model)
+                        water.unique_id = get_random_id()
+                        self.model.schedule.add(water)
+                        self.model.grid.place_agent(water,(cell[0],cell[1]))
+        else:
+            call+=1
+        #print("No execution",call)
 
     def get_position(self):
         return super().get_position()
@@ -270,6 +274,7 @@ class Human(Agent):
     """
     class Mobility(IntEnum):
         NORMAL = 1
+        ERRATIC = 2
 
     class Status(IntEnum):
         DEAD = 0
@@ -279,6 +284,7 @@ class Human(Agent):
     class Action(IntEnum):
         MORALE_SUPPORT = 1
         VERBAL_SUPPORT = 2
+        RETREAT = 3
 
     class Awareness(IntEnum):
         UNAWARE = 0
@@ -295,6 +301,13 @@ class Human(Agent):
 
     MIN_KNOWLEDGE = 0
     MAX_KNOWLEDGE = 1
+
+    
+
+    # The value the panic score must reach for an agent to start panic behaviour
+    #PANIC_THRESHOLD = 0.9             #modifying the panic threshold to 0.9
+    STATE_THRESHOLD = 0.2
+
     # When the health value drops below this value, the agent will being to slow down
     SLOWDOWN_THRESHOLD = 0.5
 
@@ -306,6 +319,7 @@ class Human(Agent):
         collaborates: bool,
         route_information : bool,
         vision,
+        nervousness,
         experience,
         believes_alarm: bool,
         self_warned: bool,
@@ -315,10 +329,9 @@ class Human(Agent):
     ):
         rand_id = get_random_id()
         super().__init__(rand_id, model)
-
-        print(self.unique_id)
         
         self.traversable = False
+
         self.pos = pos
         self.health = health
         self.mobility: Human.Mobility = Human.Mobility.NORMAL
@@ -327,16 +340,22 @@ class Human(Agent):
         self.vision = vision
         self.collaborates = collaborates
         self.route_information = route_information
+        self.nervousness = nervousness
         self.awareness : Human.Awareness = Human.Awareness.UNAWARE
 
         self.verbal_collaboration_count: int = 0
      
+        
         self.morale_boost: bool = False
         
+        
+
         self.knowledge = self.MIN_KNOWLEDGE
+        self.nervousness = self.nervousness
         self.experience = experience
         self.believes_alarm = believes_alarm
         self.self_warned = self_warned
+        self.age = age
         self.escaped: bool = False
 
         self.planned_target: tuple[Agent,Coordinate] = (
@@ -413,7 +432,7 @@ class Human(Agent):
                             checked_tiles.add(
                                 tile
                             )  # Add the tile to checked tiles so we don't check it again
-                            visible_neighborhood.add((tuple(visible_contents),tile))
+                            visible_neighborhood.add((tile, tuple(visible_contents)))
 
                 except Exception as e:
                     print(e)
@@ -450,7 +469,7 @@ class Human(Agent):
         # print(type(self.visited_tiles))
         # print(type(self.visible_tiles))
         #print("previous known_pos", known_pos)
-        #print("len prev_known_pos", len(known_pos))
+        print("len prev_known_pos", len(known_pos))
         #print(self.visited_tiles)
         # If we are excluding visited tiles, remove the visited_tiles set from the available tiles
         if not allow_visited:
@@ -483,14 +502,14 @@ class Human(Agent):
 
         new_pos = [i for i in known_pos if i not in water_coord_set]
         #print("pos after deletion",new_pos)
-        #print("length of del_pos", len(new_pos))
+        print("length of del_pos", len(new_pos))
 
            
 
         traversable_pos = [pos for pos in new_pos if self.location_is_traversable(pos)]
         # print(type(traversable_pos))
         #print("new traversable pos", traversable_pos)
-        #print("length of trav pos", len(traversable_pos))
+        print("length of trav pos", len(traversable_pos))
         
         while not self.planned_target[1]:
             print("move away from water")
@@ -586,14 +605,21 @@ class Human(Agent):
 
         return self.planned_target[1]
 
+    
+    def get_state_score(self):
+        health_component = 1.50 / np.exp(self.health / (self.nervousness))
+        experience_component = 1 / np.exp(self.experience / self.nervousness)
+
+        state_score = health_component + experience_component
+
+        return state_score
+
     def die(self):
         # Store the agent's position of death so we can remove them and place a DeadHuman
         pos = self.pos
-        self.model.schedule.remove(self)
         self.model.grid.remove_agent(self)
         dead_self = DeadHuman(pos, self.model)
         self.model.grid.place_agent(dead_self, pos)
-        self.model.schedule.add(dead_self)
         print(f"Agent {self.unique_id} died at", pos)
 
     def health_mobility_rules(self):
@@ -602,15 +628,18 @@ class Human(Agent):
         #print(neighborhood)
         contents = self.model.grid.get_cell_list_contents(self.pos)
         #print('contents', contents)
+        
         for content in contents:
             if isinstance(content,Water):
                 print('surrounding has water')
+
                 self.die()           # if water catches up to agent, it dies. Prerviously health would decrease but agent would still live.
 
     def check_surrounding(self):
         if self.morale_boost:
             return
-    
+
+        
         for _,agents in self.visible_tiles:
             
             for agent in agents:
@@ -622,15 +651,29 @@ class Human(Agent):
                     self.self_warned = False
                     #print(f"Agent {self.unique_id} inactive and unaware of the flood")
 
+       
+    def check_state(self):
+        state_score = self.get_state_score()
+
+        if state_score >= self.STATE_THRESHOLD :
+            print(f"Agent {self.unique_id} has normal mobility")
+            self.mobility = Human.Mobility.NORMAL
+            #self.awareness = Human.Awareness.AWARE
+            
+        elif state_score < self.STATE_THRESHOLD:
+            print("Agent does not have normal mobility:")
+            self.mobility = Human.Mobility.ERRATIC
+            #self.awareness = Human.Awareness.UNAWARE
+
     def check_awareness(self):
 
         if self.route_information:
             self.awareness = Human.Awareness.AWARE
-            #print(f"Agent {self.unique_id} knows shelter location")
+            print(f"Agent {self.unique_id} knows shelter location")
         
         if not self.route_information:
             self.awareness = Human.Awareness.UNAWARE
-            #print(f"Agent {self.unique_id} unaware of shelter location")
+            print(f"Agent {self.unique_id} unaware of shelter location")
     
     def move_away_from_water(self):
        
@@ -660,26 +703,21 @@ class Human(Agent):
             self.knowledge = self.knowledge + new_knowledge_percentage
             # print("Current knowledge:", self.knowledge)
 
-    def verbal_collaboration(self, target_exit: Self, target_location: Coordinate):
+    def verbal_collaboration(self, target_agent: Self, target_location: Coordinate):
         success = False
         for _, agents in self.visible_tiles:
             for agent in agents:
                 if isinstance(agent, Human) and agent.get_mobility() == Human.Mobility.NORMAL:
                     if not agent.believes_alarm:
                         agent.set_believes(True)
-                        print("agent informed through verbal collab and now believes the alarm ")
-                        success = True
+                        print("agent informed of forecast and now believes the alarm ")
 
-                        # Inform the agent of the target location
+                    # Inform the agent of the target location
                     if not target_location in agent.known_tiles:
                         agent.known_tiles[target_location] = set()
-                        success = True
-                        print(f"agent {agent.unique_id} did not know of location previously")
-                    
-                    if target_exit not in agent.known_tiles[target_location]:       #setting success to true only if the agent did not already know about exit
-                        agent.known_tiles[target_location].add(target_exit)         # and thus self was able to give this agent a new piece of info, which is actual collaboration
-                        success = True
-                        print("agent did not know of exit previously")
+
+                    agent.known_tiles[target_location].add(target_agent)
+                    success = True
 
         if success:
             #print("Agent informed others of an emergency exit!")
@@ -689,12 +727,26 @@ class Human(Agent):
                 
         # if self.test_collaboration():
         for location, visible_agents in self.visible_tiles:
-            
+            if self.planned_action:
+                break
+
             for agent in visible_agents:
+                if self.planned_action:
+                    break
+                # if isinstance(agent, Human) and not self.planned_action:
+                #     if agent.get_mobility() == Human.Mobility.PANIC:
+                        
+                #         self.planned_target = (
+                #             agent,
+                #             location,
+                #         )
+                #         # Plan to DO MORALE SUPPORT the agent
+                #         self.planned_action = Human.Action.MORALE_SUPPORT
+                #         print(f"Agent {self.unique_id} planned VERBAL collaboration at", location)
+                #         break
                     
                 if isinstance(agent, EmergencyExit):
                     # Verbal collaboration
-                    self.planned_action = Human.Action.VERBAL_SUPPORT
                     self.verbal_collaboration(agent, location)
 
 
@@ -783,9 +835,10 @@ class Human(Agent):
         planned_agent, _ = self.planned_target
 
         if planned_agent:
-            # Agent had planned verbal collaboration, but the agent is no longer alive, so drop it.
+            # Agent had planned morale collaboration, but the agent is no longer panicking or no longer alive, so drop it.
             if self.planned_action == Human.Action.VERBAL_SUPPORT and (
-                not planned_agent.get_status() == Human.Status.ALIVE
+                planned_agent.get_mobility() != Human.Mobility.ERRATIC
+                or not planned_agent.get_status() == Human.Status.ALIVE
             ):
                 # print("Target agent no longer panicking. Dropping action.")
                 self.planned_target = (None, None)
@@ -833,6 +886,10 @@ class Human(Agent):
 
                 if next_location == None:
                     raise Exception("Next location can't be none")
+
+                # if self.check_retreat(next_path, next_location):
+                #     # We are retreating and therefore need to try a totally new path, so continue from the start of the loop
+                #     continue
 
                 # Test the next location to see if we can move there
                 if self.location_is_traversable(next_location):
@@ -883,13 +940,13 @@ class Human(Agent):
             planned_target_agent = self.planned_target[0]
 
             # If a flood has started and the agent believes it, attempt to plan an exit location if we haven't already and we aren't performing an action
-            if (self.model.alarm and self.believes_alarm) or self.self_warned:    #this or statement is causing problems 
+            if (self.model.alarm and self.believes_alarm) or self.self_warned:
                 #print("checking for shelter awareness")
                 self.check_awareness()
                 if self.mobility == Human.Mobility.NORMAL and self.awareness == Human.Awareness.AWARE :
                     
                     if not isinstance(planned_target_agent, EmergencyExit) and not self.planned_action:
-                        #print(f"agent {self.unique_id} believes the alarm and attempts to escape")
+                        print(f"agent {self.unique_id} believes the alarm and attempts to escape")
                         self.attempt_exit_plan()
                        
 
@@ -907,8 +964,11 @@ class Human(Agent):
                     #print(f"Agent {self.unique_id} sets random target")
                     #self.move_away_from_water()
                     self.attempt_exit_plan()
-                    #print("get random target")
+                    print("get random target")
                     #self.get_random_target()
+           
+                # elif self.mobility == Human.Mobility.ERRATIC and self.awareness == Human.Awareness.UNAWARE:
+                #     self.get_random_target()
 
 
             #planned_pos = self.planned_target[1]
@@ -918,13 +978,15 @@ class Human(Agent):
 
         ##if one does not beleive the alarm 
             if not self.believes_alarm:
-                #print(f"alarm not released or agent {self.unique_id} does not believe the alarm but agent checks surounding")
+                print(f"alarm not released or agent {self.unique_id} does not believe the alarm but agent checks surounding")
               # 
                 self.check_surrounding()
 
                 if self.self_warned == True :
-                    #print(f"Agent {self.unique_id} now believes the flood is real!")
+                    print(f"Agent {self.unique_id} now believes the flood is real!")
                     #self.check_for_collaboration()
+                    self.check_state()
+                    self.get_state_score()
                     self.check_awareness()
 
                     #if self.mobility == Human.Mobility.NORMAL and self.awareness == Human.Awareness.AWARE:
@@ -952,22 +1014,15 @@ class Human(Agent):
                 print(f"Agent {self.unique_id} has reached shelter")
                 self.model.grid.remove_agent(self)
 
-    # def get_status(self):                             # we need to redefine this get status function 
-    #     if self.health > self.MIN_HEALTH and not self.escaped:
-    #         return Human.Status.ALIVE
-    #     elif self.health <= self.MIN_HEALTH and not self.escaped:
-    #         return Human.Status.DEAD
-    #     elif self.escaped:
-    #         return Human.Status.ESCAPED
-
-
-    #     return None
-
     def get_status(self):
-        if not self.escaped:
+        if self.health > self.MIN_HEALTH and not self.escaped:
             return Human.Status.ALIVE
-        else:
+        elif self.health <= self.MIN_HEALTH and not self.escaped:
+            return Human.Status.DEAD
+        elif self.escaped:
             return Human.Status.ESCAPED
+
+        return None
 
     def get_speed(self):
         return self.speed
@@ -1005,7 +1060,10 @@ class Human(Agent):
             return True
         else:
             return False
-   
+
+    
+    
+       
     def get_verbal_collaboration_count(self):
         return self.verbal_collaboration_count
 
