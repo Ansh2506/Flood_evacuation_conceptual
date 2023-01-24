@@ -5,7 +5,7 @@ library(tidyverse)
 
 
 # Set resolution: 1(30x30) 2(20x20) 3(10x10)
-res <- 2
+res <- 3
 
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
@@ -78,5 +78,4 @@ for(i in 2:dim(dat)[1]-1){
 }
 any(is.na(dat))
 
-write.table(txt, file="grid.txt", row.names=FALSE, col.names=FALSE, quote=F)
-txt
+write.table(txt, file=paste("grid",res,".txt", sep =""), row.names=FALSE, col.names=FALSE, quote=F)
